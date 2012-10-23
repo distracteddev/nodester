@@ -1,9 +1,9 @@
-#!/usr/bin/env node1
+#!/usr/bin/env node
 
 require.paths.unshift('/usr/lib/node_modules');
 var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
-var daemon = require('daemon');
+//var daemon = require('daemon');
 var fs = require('fs');
 var path = require('path');
 var net = require('net');
@@ -28,23 +28,29 @@ if (config.env) {
 }
 env.app_port = parseInt(config.port, 10);
 env.app_host = config.ip;
-var args = ['/app/' + config.start];
-var chroot_res = daemon.chroot(config.appchroot);
-if (chroot_res !== true) {
-  log_line('chroot_runner', 'Failed to chroot to ' + config.apphome, LOG_STDERR);
-  pre_shutdown();
-  process.exit(1);
-}
-var ch_uid = daemon.setreuid(config.userid);
-if (ch_uid !== true) {
-  log_line.call('chroot_runner', 'Failed to change user to ' + config.userid, LOG_STDERR);
-  pre_shutdown();
-  process.exit(2);
-}
+var args = ['app/' + config.start];
+console.log("I Ran at least", config.appchroot);
+//var chroot_res = daemon.chroot(config.appchroot);
+console.log("I probably didnt run");
+//if (chroot_res !== true) {
+//console.log("SSOMETHING ELSE");
+//  log_line('chroot_runner', 'Failed to chroot to ' + config.apphome, LOG_STDERR);
+//  pre_shutdown();
+//  process.exit(1);
+//}
+//var ch_uid = daemon.setreuid(config.userid);
+//if (ch_uid !== true) {
+//console.log("SSOMETHING");
+//  log_line.call('chroot_runner', 'Failed to change user to ' + config.userid, LOG_STDERR);
+//  pre_shutdown();
+//  process.exit(2);
+//}
 var child = null;
 var child_watcher_time = null;
 var log_lines = [];
-var myPid = daemon.start();
+console.log("Starting Daemon");
+//var myPid = daemon.start();
+//console.log("MYPID:", myPid);
 (function () {
   var log_listen = function (p, cb) {
       var srv = net.createServer(function (conn) {
@@ -60,40 +66,43 @@ var myPid = daemon.start();
       if (typeof this == 'string') {
         line = this + line;
       }
+console.log(line.toString());
       log_lines.push(line);
       if (log_lines.length > 150) log_lines.shift();
     };
-  log_line.call('chroot_runner', 'New PID: ' + myPid.toString());
-  if (path.existsSync('/.nodester/pids/runner.pid')) fs.unlinkSync('/.nodester/pids/runner.pid');
-  fs.writeFileSync('/.nodester/pids/runner.pid', myPid.toString());
-  var log_sock_path = path.join('/', '.nodester', 'logs.sock');
-  log_listen(log_sock_path, function () {
-    log_line('chroot_runner', 'log_listen\'ing', LOG_STDERR);
-    try {
-      fs.chmodSync(log_sock_path, '0777');
-    } catch (e) {
-      log_line('chroot_runner', 'Failed to chmod logs.sock', LOG_STDERR);
-    }
-    process.on('SIGINT', function () {
-      log_line.call('chroot_runner', 'SIGINT recieved, sending SIGTERM to children.');
-      if (child !== null) {
-        log_line.call('chroot_runner', 'Child PID: ' + child.pid.toString());
-        process.kill(child.pid, 'SIGTERM');
-        process.exit();
-      } else {
-        process.exit();
-      }
-    });
-    process.on('SIGTERM', function () {
-      log_line.call('chroot_runner', 'SIGTERM recieved, sending SIGTERM to children.');
-      if (child !== null) {
-        log_line.call('chroot_runner', 'Child PID: ' + child.pid.toString());
-        process.kill(child.pid, 'SIGTERM');
-        process.exit();
-      } else {
-        process.exit();
-      }
-    });
+var myPid = 12345;
+log_line.call('chroot_runner', 'New PID: ' + myPid.toString());
+  if (path.existsSync('./.nodester/pids/runner.pid')) fs.unlinkSync('./.nodester/pids/runner.pid');
+  fs.writeFileSync('./.nodester/pids/runner.pid', myPid.toString());
+//  var log_sock_path = path.join('./', '.nodester', 'logs.sock');
+//  log_listen(log_sock_path, function () {
+//    log_line('chroot_runner', 'log_listen\'ing', LOG_STDERR);
+//    try {
+//      fs.chmodSync(log_sock_path, '0777');
+//    } catch (e) {
+//      log_line('chroot_runner', 'Failed to chmod logs.sock', LOG_STDERR);
+//    }
+//    process.on('SIGINT', function () {
+//      log_line.call('chroot_runner', 'SIGINT recieved, sending SIGTERM to children.');
+//      if (child !== null) {
+//        log_line.call('chroot_runner', 'Child PID: ' + child.pid.toString());
+//        process.kill(child.pid, 'SIGTERM');
+//        process.exit();
+//      } else {
+//        process.exit();
+//      }
+//    });
+//    process.on('SIGTERM', function () {
+//      log_line.call('chroot_runner', 'SIGTERM recieved, sending SIGTERM to children.');
+//      if (child !== null) {
+//        log_line.call('chroot_runner', 'Child PID: ' + child.pid.toString());
+//        process.kill(child.pid, 'SIGTERM');
+//        process.exit();
+//      } else {
+//        process.exit();
+//      }
+//    });
+//});
     var start_child = function () {
         var pack = {};
         // normalize path, since args contain the node-executable pop that value
@@ -120,7 +129,7 @@ var myPid = daemon.start();
         // n dir only handles number paths without v0.x.x  => 0.x.x
         version = version.replace('v', '').trim();
         // Insert node-watcher code and link the dependency
-        if (node_versions.indexOf(version) !== -1) {
+        if (node_versions.indexOf(version) !== -2) {
           // The spawn process only works with absolute paths, and by default n'd saved every
           // version of node in /usr/local/n/version
           var nodePath = '/usr/local/n/versions/' + version + '/bin/node';
@@ -149,7 +158,10 @@ var myPid = daemon.start();
             }
             log_line.call('data', WARN + ' :: You need to run `nodester npm install APPNAME ' + 'coffee-script` before start this app, if you already did this ignore this msg', LOG_STDERR);
           }
-          child = spawn(spawingPath, pack.flags.concat(args), {
+pack.flags.push(spawingPath);
+console.log("SPAWNING PATH:", spawingPath, pack.flags.concat(args));
+console.log("ENV:", env);
+          child = spawn("nohup", pack.flags.concat(args), {
             env: env
           });
           /*
@@ -169,16 +181,20 @@ var myPid = daemon.start();
           child.on('exit', function (code) {
             if (code > 0 && run_count > run_max) {
               log_line.call('Watcher', 'Error: Restarted too many times, bailing.', LOG_STDERR);
+console.log("RUN COUNT TOO HIGH");
               clearInterval(child_watcher_timer);
             } else if (code > 0) {
               log_line.call('Watcher', 'Process died with exit code ' + code + '. Restarting...', LOG_STDERR);
+console.log("SOME ERROR", code);
               child = null;
             } else {
+console.log("NO ERROR, SHOULD EXIT CLEANLY");
               log_line.call('Watcher', 'Process exited cleanly. Dieing.', LOG_STDERR);
               clearInterval(child_watcher_timer);
             }
           });
         } else {
+console.log(node_versions);
           log_line.call('Watcher', 'Process exited cleanly. node.js Version:' + version + ' not avaiable', LOG_STDERR);
           clearInterval(child_watcher_timer);
         }
@@ -190,5 +206,4 @@ var myPid = daemon.start();
         }
       };
     child_watcher_timer = setInterval(child_watcher, 750);
-  });
-})();
+  })();
