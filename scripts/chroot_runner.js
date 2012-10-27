@@ -106,10 +106,11 @@ var log_lines = [];
       // n dir only handles number paths without v0.x.x  => 0.x.x
       version = version.replace('v', '').trim();
       // Insert node-watcher code and link the dependency
-      if (node_versions.indexOf(version) !== -2) {
+      if (node_versions.indexOf(version) !== -1) {
         // The spawn process only works with absolute paths, and by default n'd saved every
         // version of node in /usr/local/n/version
-        var nodePath = '/usr/local/n/versions/' + version + '/bin/node';
+        //var nodePath = '/usr/local/n/versions/' + version + '/bin/node';
+        var nodePath = '/opt/node/base/node-v0.4.9/usr/local/n/versions/' + version + '/bin/node';
         var spawingPath = nodePath;
         var WARN = '\033[1m\033[31mWARN\033[39m\033[22m';
         log_line.call('data', 'Spawing ' + args[0], LOG_STDOUT);
@@ -135,10 +136,11 @@ var log_lines = [];
           }
           log_line.call('data', WARN + ' :: You need to run `nodester npm install APPNAME ' + 'coffee-script` before start this app, if you already did this ignore this msg', LOG_STDERR);
         }
+        pack.flags.push('app_port=' + env.app_port);
         pack.flags.push(spawingPath);
         console.log("SPAWNING PATH:", spawingPath, pack.flags.concat(args));
         console.log("ENV:", env);
-        child = spawn("nohup", pack.flags.concat(args), {
+        child = spawn("sudo", pack.flags.concat(args), {
           env: env
         });
         /*
